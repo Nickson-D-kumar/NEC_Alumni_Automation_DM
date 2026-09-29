@@ -1,0 +1,83 @@
+import React, { useState, useEffect } from 'react';
+import api from '../services/api';
+import { X, MessageSquare, Clock, CheckCircle2 } from 'lucide-react';
+
+export default function StudentRemarksModal({ alumniId, isOpen, onClose }) {
+  const [remarks, setRemarks] = useState([]);
+  const [alumniName, setAlumniName] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen && alumniId) fetchStudentRemarks();
+  }, [isOpen, alumniId]);
+
+  const fetchStudentRemarks = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(`/alumni/${alumniId}/student-remarks`);
+      setRemarks(res.data.data.adminRemarks || []);
+      setAlumniName(res.data.data.name);
+    } catch (err) {
+      console.error('Error fetching student remarks:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md bg-white dark:bg-[#151D2F] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0B0F19]">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <MessageSquare size={16}/>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Officer Remarks</h3>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400">Profile: <span className="text-sky-600 dark:text-sky-400 font-medium">{alumniName}</span></p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><X size={16}/></button>
+        </div>
+
+        {/* Thread */}
+        <div className="p-5 max-h-[50vh] overflow-y-auto space-y-2.5">
+          {loading ? (
+            <p className="text-center text-xs text-slate-500 dark:text-slate-400 py-6">Loading notes...</p>
+          ) : remarks.length === 0 ? (
+            <div className="text-center py-6">
+              <CheckCircle2 className="mx-auto text-emerald-500 dark:text-emerald-400 mb-1.5" size={20}/>
+              <p className="text-xs text-slate-600 dark:text-slate-400">No pending remarks or revision requests.</p>
+            </div>
+          ) : (
+            remarks.map((r, i) => (
+              <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                    {r.role || r.sender?.role || 'Officer'}
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <Clock size={10}/> {new Date(r.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-800 dark:text-slate-200 mt-1 leading-relaxed">{r.message}</p>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0B0F19] flex justify-end">
+          <button onClick={onClose} className="px-3.5 py-1.5 text-xs font-semibold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg transition">
+            Close
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
