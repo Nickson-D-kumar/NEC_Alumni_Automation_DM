@@ -329,7 +329,7 @@ const StaffDashboard = () => {
                               onClick={() => handleEscalationUpdate(record._id, 'LEVEL_3_HOD')}
                               className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-700 hover:bg-purple-100 transition-colors"
                             >
-                              Escalate to HOD (L-3)
+                              Escalate to Head (L-3)
                             </button>
                           </div>
                         </td>

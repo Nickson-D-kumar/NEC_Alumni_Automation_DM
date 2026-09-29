@@ -364,7 +364,7 @@ const EditAlumniDrawer = ({ alumni, isOpen, onClose, onRefresh }) => {
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 bg-[#003366] hover:bg-[#002244] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-semibold shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+              className="flex items-center gap-2 bg-[#7C3AED] hover:bg-[#5B21B6] dark:bg-purple-600 dark:hover:bg-purple-500 text-white px-5 py-2 rounded-lg text-xs font-semibold shadow-lg shadow-purple-600/20 disabled:opacity-50"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>{loading ? 'Submitting...' : 'Submit Verification Data'}</span>

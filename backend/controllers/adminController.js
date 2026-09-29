@@ -464,6 +464,84 @@ const processPayoutRequest = async (req, res) => {
   }
 };
 
+// @desc    Toggle User Status (Activate / Deactivate)
+// @route   PATCH /api/admin/users/:userId/status, PUT /api/admin/users/:userId/status
+// @access  Private (Admin)
+const toggleUserStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const adminId = req.user.id || req.user._id;
+
+    // Self-Deactivation Guard
+    if (adminId.toString() === userId.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot deactivate your own admin account.'
+      });
+    }
+
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User account not found.' });
+    }
+
+    targetUser.isActive = !targetUser.isActive;
+    await targetUser.save();
+
+    const statusText = targetUser.isActive ? 'activated' : 'deactivated';
+    return res.json({
+      success: true,
+      message: `User ${targetUser.name} has been ${statusText} successfully.`,
+      data: {
+        id: targetUser._id,
+        name: targetUser.name,
+        email: targetUser.email,
+        role: targetUser.role,
+        isActive: targetUser.isActive
+      }
+    });
+  } catch (error) {
+    console.error('Error toggling user status:', error);
+    return res.status(500).json({ success: false, message: 'Failed to update user status', error: error.message });
+  }
+};
+
+// @desc    Delete User Account
+// @route   DELETE /api/admin/users/:userId
+// @access  Private (Admin)
+const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const adminId = req.user.id || req.user._id;
+
+    // Self-Deletion Guard
+    if (adminId.toString() === userId.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete your own admin account.'
+      });
+    }
+
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User account not found.' });
+    }
+
+    // Reassign/nullify linked relations
+    await Alumni.updateMany({ assignedTo: userId }, { $set: { assignedTo: null } });
+
+    await User.findByIdAndDelete(userId);
+
+    return res.json({
+      success: true,
+      message: `User ${targetUser.name} (${targetUser.email}) deleted successfully.`
+    });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    return res.status(500).json({ success: false, message: 'Failed to delete user account', error: error.message });
+  }
+};
+
 module.exports = {
   uploadMasterSheet,
   uploadExcel: uploadMasterSheet,
@@ -477,5 +555,7 @@ module.exports = {
   getPendingStudents,
   verifyStudentRegistration,
   getPayoutRequests,
-  processPayoutRequest
+  processPayoutRequest,
+  toggleUserStatus,
+  deleteUser
 };

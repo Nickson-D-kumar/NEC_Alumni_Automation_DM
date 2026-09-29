@@ -48,13 +48,13 @@ const Login = () => {
         
         {/* Header Branding */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-[#003366] flex items-center justify-center shadow-md mb-4">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-[#7C3AED] flex items-center justify-center shadow-md mb-4">
             <GraduationCap className="w-9 h-9 text-white" />
           </div>
-          <h2 className="text-2xl font-extrabold text-[#003366] dark:text-sky-400 tracking-tight">
+          <h2 className="text-2xl font-extrabold text-[#7C3AED] dark:text-purple-400 tracking-tight">
             National Engineering College
           </h2>
-          <p className="text-xs text-[#0077B5] dark:text-sky-300 font-bold mt-1 uppercase tracking-wider">
+          <p className="text-xs text-[#7C3AED] dark:text-purple-300 font-bold mt-1 uppercase tracking-wider">
             Alumni Association, Kovilpatti
           </p>
           <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 font-medium">
@@ -84,7 +84,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@crm.com"
-                className="w-full bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-slate-600 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#0077B5] dark:focus:border-sky-400 focus:ring-1 focus:ring-[#0077B5] transition-all"
+                className="w-full bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-slate-600 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#7C3AED] dark:focus:border-purple-500 focus:ring-1 focus:ring-[#7C3AED] transition-all"
               />
             </div>
           </div>
@@ -101,7 +101,7 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-slate-600 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#0077B5] dark:focus:border-sky-400 focus:ring-1 focus:ring-[#0077B5] transition-all"
+                className="w-full bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-slate-600 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#7C3AED] dark:focus:border-purple-500 focus:ring-1 focus:ring-[#7C3AED] transition-all"
               />
               <button
                 type="button"
@@ -118,7 +118,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full flex items-center justify-center gap-2 bg-[#003366] hover:bg-[#002244] dark:bg-sky-600 dark:hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all text-sm disabled:opacity-50 mt-2"
+            className="w-full flex items-center justify-center gap-2 bg-[#7C3AED] hover:bg-[#6D28D9] dark:bg-purple-600 dark:hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all text-sm disabled:opacity-50 mt-2"
           >
             <span>{submitting ? 'Authenticating Role...' : 'Sign In to Portal'}</span>
             <ArrowRight className="w-4 h-4" />
@@ -129,7 +129,7 @@ const Login = () => {
         <div className="text-center mt-4">
           <Link
             to="/register"
-            className="inline-flex items-center gap-1.5 text-xs text-[#0077B5] dark:text-sky-400 hover:underline font-semibold transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-[#7C3AED] dark:text-purple-400 hover:underline font-semibold transition-colors"
           >
             <UserPlus size={14} />
             <span>New Student Coordinator? Self-Register Here</span>

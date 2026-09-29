@@ -14,7 +14,9 @@ const {
   getPendingStudents,
   verifyStudentRegistration,
   getPayoutRequests,
-  processPayoutRequest
+  processPayoutRequest,
+  toggleUserStatus,
+  deleteUser
 } = require('../controllers/adminController');
 
 router.post('/upload-master-sheet', protect, authorize('ADMIN'), upload.single('file'), uploadMasterSheet);
@@ -31,6 +33,9 @@ router.put('/payout-requests/:id/process', protect, authorize('ADMIN'), processP
 
 router.get('/users', protect, authorize('ADMIN'), getUsers);
 router.post('/users', protect, authorize('ADMIN'), createUser);
+router.patch('/users/:userId/status', protect, authorize('ADMIN'), toggleUserStatus);
+router.put('/users/:userId/status', protect, authorize('ADMIN'), toggleUserStatus);
+router.delete('/users/:userId', protect, authorize('ADMIN'), deleteUser);
 router.post('/create-student', protect, authorize('ADMIN'), createStudentCoordinator);
 
 // Student registration verification endpoints EXCLUSIVELY for ADMIN

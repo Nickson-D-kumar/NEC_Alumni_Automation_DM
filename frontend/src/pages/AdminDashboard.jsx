@@ -7,7 +7,7 @@ import PendingStudentsApproval from '../components/PendingStudentsApproval';
 import AddStudentModal from '../components/AddStudentModal';
 import KpiCard from '../components/KpiCard';
 import api from '../services/api';
-import { ShieldCheck, Upload, Award, Users, Database, BarChart2, CheckCircle2, UserPlus, RefreshCw, AlertCircle, Eye, UserCheck, Calendar, Search, Wallet, IndianRupee, Check, X } from 'lucide-react';
+import { ShieldCheck, Upload, Award, Users, Database, BarChart2, CheckCircle2, UserPlus, RefreshCw, AlertCircle, Eye, UserCheck, Calendar, Search, Wallet, IndianRupee, Check, X, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const AdminDashboard = () => {
@@ -22,6 +22,7 @@ const AdminDashboard = () => {
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
   const [selectedInspectId, setSelectedInspectId] = useState(null);
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState(null);
   const [search, setSearch] = useState('');
 
   const [newUser, setNewUser] = useState({
@@ -110,6 +111,37 @@ const AdminDashboard = () => {
     } catch (error) {
       setCreatingUser(false);
       setActionMessage({ type: 'error', text: error.response?.data?.message || 'Failed to create user account' });
+    }
+  };
+
+  const handleToggleUserStatus = async (usr) => {
+    setActionMessage(null);
+    try {
+      const response = await api.patch(`/admin/users/${usr._id}/status`);
+      setActionMessage({ type: 'success', text: response.data.message });
+      fetchData();
+    } catch (error) {
+      setActionMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to update user status'
+      });
+    }
+  };
+
+  const handleConfirmDeleteUser = async () => {
+    if (!deleteConfirmUser) return;
+    setActionMessage(null);
+    try {
+      const response = await api.delete(`/admin/users/${deleteConfirmUser._id}`);
+      setActionMessage({ type: 'success', text: response.data.message });
+      setDeleteConfirmUser(null);
+      fetchData();
+    } catch (error) {
+      setActionMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to delete user account'
+      });
+      setDeleteConfirmUser(null);
     }
   };
 
@@ -471,22 +503,70 @@ const AdminDashboard = () => {
                       <th className="p-3">System Role</th>
                       <th className="p-3">Department</th>
                       <th className="p-3">Status</th>
+                      <th className="p-3 text-right pr-6">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {usersList.map((usr) => (
-                      <tr key={usr._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="p-3 font-bold text-slate-900 dark:text-white">{usr.name}</td>
-                        <td className="p-3 font-mono text-slate-600 dark:text-slate-400">{usr.email}</td>
-                        <td className="p-3 font-bold text-indigo-700 dark:text-indigo-400">{usr.role}</td>
-                        <td className="p-3 text-slate-700 dark:text-slate-300">{usr.department || 'All'}</td>
-                        <td className="p-3">
-                          <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
-                            Active
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {usersList.map((usr) => {
+                      const isCurrentAccount = user?.id === usr._id || user?._id === usr._id || (user?.email && usr.email && user.email.toLowerCase() === usr.email.toLowerCase());
+                      const isActive = usr.isActive !== false;
+
+                      return (
+                        <tr key={usr._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="p-3 font-bold text-slate-900 dark:text-white">{usr.name}</td>
+                          <td className="p-3 font-mono text-slate-600 dark:text-slate-400">{usr.email}</td>
+                          <td className="p-3 font-bold text-indigo-700 dark:text-indigo-400">{usr.role}</td>
+                          <td className="p-3 text-slate-700 dark:text-slate-300">{usr.department || 'All'}</td>
+                          <td className="p-3">
+                            {isActive ? (
+                              <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                                Active
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+                                Inactive
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 text-right pr-4">
+                            {isCurrentAccount ? (
+                              <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 rounded-md border border-indigo-200 dark:border-indigo-800">
+                                (Current Account)
+                              </span>
+                            ) : (
+                              <div className="flex items-center justify-end gap-2">
+                                {isActive ? (
+                                  <button
+                                    onClick={() => handleToggleUserStatus(usr)}
+                                    className="text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/30 text-xs px-2.5 py-1 rounded-md font-medium transition shadow-sm"
+                                    title="Deactivate User Account"
+                                  >
+                                    Deactivate
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleToggleUserStatus(usr)}
+                                    className="text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-xs px-2.5 py-1 rounded-md font-medium transition shadow-sm"
+                                    title="Activate User Account"
+                                  >
+                                    Activate
+                                  </button>
+                                )}
+
+                                <button
+                                  onClick={() => setDeleteConfirmUser(usr)}
+                                  className="text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-xs px-2.5 py-1 rounded-md font-medium transition shadow-sm flex items-center gap-1"
+                                  title="Delete User Account"
+                                >
+                                  <Trash2 size={13} />
+                                  <span>Delete</span>
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -684,6 +764,44 @@ const AdminDashboard = () => {
           onClose={() => setSelectedInspectId(null)}
           onActionComplete={fetchData}
         />
+
+        {/* User Deletion Confirmation Modal */}
+        {deleteConfirmUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm p-4">
+            <div className="w-full max-w-md bg-white dark:bg-[#151D2F] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4">
+              <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+                <div className="p-2 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Confirm User Deletion</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Permanent account removal</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                Are you sure you want to permanently delete user <strong className="text-slate-900 dark:text-white">{deleteConfirmUser.name}</strong> (<span className="font-mono text-indigo-600 dark:text-indigo-400">{deleteConfirmUser.email}</span>)? This action cannot be undone.
+              </p>
+
+              <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmUser(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteUser}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition"
+                >
+                  Confirm Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </main>
     </div>

@@ -41,12 +41,12 @@ const Navbar = () => {
         <div className="flex items-center justify-between max-w-7xl mx-auto">
 
           <Link to={dashboardPath} className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-lg bg-[#003366] flex items-center justify-center text-white shadow-md group-hover:bg-[#002244] transition-colors">
+            <div className="w-10 h-10 rounded-lg bg-[#7C3AED] flex items-center justify-center text-white shadow-md group-hover:bg-[#5B21B6] transition-colors">
               <GraduationCap className="w-6 h-6 text-white" />
             </div>
             <div>
               <div className="flex items-baseline gap-2">
-                <h1 className="font-extrabold text-lg sm:text-xl tracking-tight text-[#003366] dark:text-sky-400 group-hover:text-[#0077B5] dark:group-hover:text-sky-300 transition-colors">
+                <h1 className="font-extrabold text-lg sm:text-xl tracking-tight text-[#7C3AED] dark:text-purple-400 group-hover:text-[#5B21B6] dark:group-hover:text-purple-300 transition-colors">
                   National Engineering College
                 </h1>
               </div>
@@ -59,10 +59,10 @@ const Navbar = () => {
           {/* User Quick Identity Pill & Theme Switcher */}
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-              <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center font-bold text-xs">
+              <div className="w-7 h-7 rounded-full bg-[#7C3AED] text-white flex items-center justify-center font-bold text-xs">
                 {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
               </div>
-              <span className="text-xs font-bold text-[#003366] dark:text-sky-300">{user.name}</span>
+              <span className="text-xs font-bold text-[#7C3AED] dark:text-purple-300">{user.name}</span>
             </div>
 
             {/* Global Theme Toggle Button */}
@@ -81,14 +81,14 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Main Navy Blue Navigation Bar */}
-      <div className="bg-[#003366] text-white border-b border-[#002244] px-4 lg:px-8 py-2.5 shadow-sm">
+      {/* Main Violet/Purple Navigation Bar */}
+      <div className="bg-[#7C3AED] text-white border-b border-[#5B21B6] px-4 lg:px-8 py-2.5 shadow-sm">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
 
           <div className="flex items-center gap-4 text-xs font-bold tracking-wider uppercase">
             <Link
               to={dashboardPath}
-              className="hover:text-sky-200 transition-colors py-1 flex items-center gap-1.5"
+              className="hover:text-purple-200 transition-colors py-1 flex items-center gap-1.5"
             >
               <span>Dashboard</span>
             </Link>
@@ -97,7 +97,7 @@ const Navbar = () => {
             {(user.role === 'ADMIN' || user.role === 'HEAD_OFFICER' || user.role === 'CHAMBER_BACK_OFFICER' || user.role === 'BACK_OFFICER') && (
               <Link
                 to="/analytics"
-                className="flex items-center gap-1.5 text-xs font-bold text-white bg-[#0077B5] hover:bg-[#005A8C] px-3 py-1.5 rounded-md transition-all shadow-sm"
+                className="flex items-center gap-1.5 text-xs font-bold text-white bg-[#5B21B6] hover:bg-[#4C1D95] px-3 py-1.5 rounded-md transition-all shadow-sm"
               >
                 <BarChart3 className="w-3.5 h-3.5" />
                 <span>Analytics</span>
@@ -111,8 +111,8 @@ const Navbar = () => {
           {/* Right Role Badges */}
           <div className="flex items-center gap-3">
             {user.department && (
-              <div className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-slate-200 bg-[#002244] px-3 py-1 rounded-md border border-slate-600/30">
-                <Building2 className="w-3.5 h-3.5 text-sky-300" />
+              <div className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-slate-100 bg-[#5B21B6] px-3 py-1 rounded-md border border-purple-400/30">
+                <Building2 className="w-3.5 h-3.5 text-purple-200" />
                 <span>{user.department}</span>
               </div>
             )}

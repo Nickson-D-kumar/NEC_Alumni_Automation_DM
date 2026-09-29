@@ -8,10 +8,16 @@ export default {
   theme: {
     extend: {
       colors: {
+        primary: {
+          DEFAULT: '#7C3AED',   // Violet/Purple Base (#7C3AED)
+          hover: '#5B21B6',     // Dark Violet Hover (#5B21B6)
+          light: '#EDE9FE',     // Soft Purple Accent / Glow (#EDE9FE)
+          dark: '#6D28D9',      // Rich Violet Accent
+        },
         brand: {
-          navy: '#003366',       // Deep Navy Blue
-          navyhover: '#002244',  // Primary Button Hover Navy
-          accent: '#0077B5',     // Medium Interactive / Accent Blue
+          navy: '#7C3AED',       // Remapped to Primary Violet
+          navyhover: '#5B21B6',  // Primary Button Hover Violet
+          accent: '#8B5CF6',     // Medium Interactive / Accent Purple
           lightbg: '#F8FAFC',    // Soft Off-White Background
           card: '#FFFFFF',       // Pure White Card Background
           border: '#CBD5E1',     // Light Gray / Slate Border
@@ -19,11 +25,12 @@ export default {
           success: '#16A34A',    // Emerald Green Accent
         },
         nec: {
-          navy: '#003366',
-          navyhover: '#002244',
-          accent: '#0077B5',
-          royal: '#003366',
-          royaldark: '#002244',
+          purple: '#7C3AED',
+          navy: '#7C3AED',
+          navyhover: '#5B21B6',
+          accent: '#8B5CF6',
+          royal: '#7C3AED',
+          royaldark: '#5B21B6',
           lightbg: '#F8FAFC',
           card: '#FFFFFF',
           border: '#CBD5E1',

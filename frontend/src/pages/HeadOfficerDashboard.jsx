@@ -244,7 +244,7 @@ const HeadOfficerDashboard = () => {
                   {level3Escalations.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="p-6 text-center text-slate-500 dark:text-slate-400 italic">
-                        No active Level-3 HOD escalations requiring resolution.
+                        No active Level-3 Head escalations requiring resolution.
                       </td>
                     </tr>
                   ) : (

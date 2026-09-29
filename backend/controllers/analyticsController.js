@@ -93,6 +93,127 @@ const getAnalyticsSummary = async (req, res) => {
   }
 };
 
+// @desc    Get Weekly Analysis Report Breakdown for Bar Chart
+// @route   GET /api/analytics/weekly-breakdown
+// @access  Private (ADMIN, HEAD_OFFICER, CHAMBER_BACK_OFFICER, BACK_OFFICER)
+const getWeeklyBreakdown = async (req, res) => {
+  try {
+    const { startDate, endDate, department } = req.query;
+
+    const now = new Date();
+    let endObj = endDate ? new Date(endDate) : new Date(now);
+    endObj.setHours(23, 59, 59, 999);
+
+    let startObj = startDate ? new Date(startDate) : new Date(endObj.getTime() - (56 * 24 * 60 * 60 * 1000));
+    startObj.setHours(0, 0, 0, 0);
+
+    // 1. Validation Constraints
+    if (isNaN(startObj.getTime()) || isNaN(endObj.getTime())) {
+      return res.status(400).json({ success: false, message: 'Invalid start or end date format.' });
+    }
+
+    if (endObj.getTime() < startObj.getTime()) {
+      return res.status(400).json({ success: false, message: 'To Date cannot be earlier than From Date.' });
+    }
+
+    const diffDays = Math.ceil((endObj.getTime() - startObj.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays > 180) {
+      return res.status(400).json({ success: false, message: 'Maximum date range is limited to 6 months.' });
+    }
+
+    // 2. Build Query Filter
+    const filter = {
+      verificationStage: { $in: ['ADMIN_APPROVED', 'VERIFIED_BY_BACK_OFFICER', 'VERIFIED_BY_HEAD'] },
+      $or: [
+        { backOfficerVerificationDate: { $gte: startObj, $lte: endObj } },
+        { updatedAt: { $gte: startObj, $lte: endObj } },
+        { createdAt: { $gte: startObj, $lte: endObj } }
+      ]
+    };
+
+    if (department && department.trim() !== '' && department.toUpperCase() !== 'ALL') {
+      filter.department = { $regex: new RegExp(`^${department.trim()}$`, 'i') };
+    }
+
+    // 3. Generate Chronological Week Buckets (0-fill logic)
+    const weeks = [];
+    let curWeekStart = new Date(startObj);
+    let weekIndex = 1;
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    while (curWeekStart.getTime() <= endObj.getTime()) {
+      let curWeekEnd = new Date(curWeekStart.getTime() + (6 * 24 * 60 * 60 * 1000));
+      curWeekEnd.setHours(23, 59, 59, 999);
+
+      if (curWeekEnd.getTime() > endObj.getTime()) {
+        curWeekEnd = new Date(endObj);
+      }
+
+      const startDay = String(curWeekStart.getDate()).padStart(2, '0');
+      const startMonth = monthNames[curWeekStart.getMonth()];
+      const endDay = String(curWeekEnd.getDate()).padStart(2, '0');
+      const endMonth = monthNames[curWeekEnd.getMonth()];
+
+      const dateRangeText = `${startDay} ${startMonth} - ${endDay} ${endMonth}`;
+      const weekLabel = `Week ${weekIndex} (${dateRangeText})`;
+
+      weeks.push({
+        weekIndex,
+        weekLabel,
+        dateRangeText,
+        startDate: curWeekStart.toISOString().split('T')[0],
+        endDate: curWeekEnd.toISOString().split('T')[0],
+        startTime: curWeekStart.getTime(),
+        endTime: curWeekEnd.getTime(),
+        verifiedCount: 0
+      });
+
+      // Advance by 7 days
+      curWeekStart = new Date(curWeekStart.getTime() + (7 * 24 * 60 * 60 * 1000));
+      curWeekStart.setHours(0, 0, 0, 0);
+      weekIndex++;
+    }
+
+    // 4. Query Matching Verified Records
+    const alumniRecords = await Alumni.find(filter).lean();
+
+    for (const record of alumniRecords) {
+      const recordTime = record.backOfficerVerificationDate
+        ? new Date(record.backOfficerVerificationDate).getTime()
+        : new Date(record.updatedAt).getTime();
+
+      const matchingBucket = weeks.find(w => recordTime >= w.startTime && recordTime <= w.endTime);
+      if (matchingBucket) {
+        matchingBucket.verifiedCount += 1;
+      }
+    }
+
+    // 5. Clean Response Payload
+    const dataPayload = weeks.map(({ weekLabel, dateRangeText, startDate, endDate, verifiedCount }) => ({
+      weekLabel,
+      dateRangeText,
+      startDate,
+      endDate,
+      verifiedCount
+    }));
+
+    return res.json({
+      success: true,
+      count: dataPayload.length,
+      data: dataPayload
+    });
+  } catch (error) {
+    console.error('Error fetching weekly breakdown analytics:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve weekly breakdown analytics',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
-  getAnalyticsSummary
+  getAnalyticsSummary,
+  getWeeklyBreakdown
 };

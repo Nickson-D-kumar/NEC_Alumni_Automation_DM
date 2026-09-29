@@ -83,7 +83,7 @@ const StudentRegister = () => {
         
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 mb-1">
+          <div className="inline-flex p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-800 text-[#7C3AED] dark:text-purple-400 mb-1">
             <ShieldCheck size={28} />
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Student Coordinator Self-Registration</h1>
@@ -116,7 +116,7 @@ const StudentRegister = () => {
             </p>
             <button
               onClick={() => navigate('/login')}
-              className="mt-2 w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-md shadow-indigo-600/20"
+              className="mt-2 w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-[#7C3AED] hover:bg-[#6D28D9] text-white transition-all shadow-md shadow-purple-600/20"
             >
               Return to Login Page
             </button>
@@ -136,7 +136,7 @@ const StudentRegister = () => {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="e.g. Rahul Sharma"
-                  className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED]"
                 />
               </div>
             </div>
@@ -151,7 +151,7 @@ const StudentRegister = () => {
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-9 pr-2 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
+                    className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-9 pr-2 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED] cursor-pointer"
                   >
                     <option value="CSE">CSE</option>
                     <option value="IT">IT</option>
@@ -173,7 +173,7 @@ const StudentRegister = () => {
                     name="year"
                     value={formData.year}
                     onChange={handleChange}
-                    className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-9 pr-2 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
+                    className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-9 pr-2 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED] cursor-pointer"
                   >
                     <option value="1st Year">1st Year</option>
                     <option value="2nd Year">2nd Year</option>
@@ -197,7 +197,7 @@ const StudentRegister = () => {
                   value={formData.mobile}
                   onChange={handleChange}
                   placeholder="10-digit mobile number"
-                  className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] font-mono"
                 />
               </div>
             </div>
@@ -214,7 +214,7 @@ const StudentRegister = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="student@institution.edu"
-                  className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED]"
                 />
               </div>
             </div>
@@ -231,7 +231,7 @@ const StudentRegister = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED]"
                 />
                 <button
                   type="button"
@@ -249,7 +249,7 @@ const StudentRegister = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl text-xs font-extrabold bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50 mt-2"
+              className="w-full py-3 px-4 rounded-xl text-xs font-extrabold bg-[#7C3AED] hover:bg-[#6D28D9] text-white transition-all shadow-md shadow-purple-600/20 disabled:opacity-50 mt-2"
             >
               {loading ? 'Submitting Registration...' : 'Submit Registration Request'}
             </button>
@@ -258,7 +258,7 @@ const StudentRegister = () => {
 
         {/* Back to Login Link */}
         <div className="text-center pt-2 border-t border-slate-200 dark:border-slate-700">
-          <Link to="/login" className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium">
+          <Link to="/login" className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-[#7C3AED] dark:hover:text-purple-400 transition-colors font-medium">
             <ArrowLeft size={14} />
             <span>Back to Unified Sign In</span>
           </Link>

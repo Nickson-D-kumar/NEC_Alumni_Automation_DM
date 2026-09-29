@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import CircularProgressRing from '../components/CircularProgressRing';
+import WeeklyAnalysisReport from '../components/WeeklyAnalysisReport';
 import api from '../services/api';
 import { 
   BarChart3, Filter, Building2, Calendar, RefreshCw, 
@@ -185,6 +186,9 @@ const AnalyticsDashboard = () => {
           />
 
         </div>
+
+        {/* WEEKLY ANALYSIS REPORT SECTION */}
+        <WeeklyAnalysisReport department={department} />
 
         {/* EXTENDED VISUAL PIPELINE BREAKDOWN */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
