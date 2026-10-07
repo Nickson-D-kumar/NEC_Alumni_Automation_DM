@@ -1,40 +1,54 @@
 import React from 'react';
-import { Clock, CheckCircle2, ShieldCheck, Award, AlertTriangle, AlertCircle, PhoneOff, PhoneCall } from 'lucide-react';
+import { Clock, CheckCircle2, ShieldCheck, Award, AlertTriangle, AlertCircle, PhoneOff, PhoneCall, XCircle } from 'lucide-react';
 
 export const StageBadge = ({ stage }) => {
   switch (stage) {
     case 'PENDING_SUBMISSION':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-amber-50 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
           <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
           <span>Pending Submission</span>
         </span>
       );
     case 'SUBMITTED_BY_STUDENT':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-50 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-sky-50 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700">
           <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
           <span>Submitted by Student</span>
+        </span>
+      );
+    case 'REVISION_REQUESTED':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+          <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+          <span>Revision Requested</span>
+        </span>
+      );
+    case 'VERIFICATION_REJECTED':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 shadow-sm">
+          <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+          <span>Verification Rejected</span>
         </span>
       );
     case 'VERIFIED_BY_BACK_OFFICER':
     case 'VERIFIED_BY_HEAD':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/70 text-[#003366] dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-indigo-50 dark:bg-indigo-950/70 text-[#003366] dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">
           <ShieldCheck className="w-3.5 h-3.5 text-[#0077B5] dark:text-indigo-400" />
           <span>Verified by Back Officer</span>
         </span>
       );
     case 'ADMIN_APPROVED':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-sm">
           <Award className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           <span>Admin Approved</span>
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
           {stage}
         </span>
       );

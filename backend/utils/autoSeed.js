@@ -93,6 +93,7 @@ const autoSeed = async () => {
       {
         batch: '2023',
         name: 'Vikramaditya Sengupta',
+        department: 'CSE',
         salutation: 'Mr.',
         gender: 'Male',
         dob: new Date('1998-05-14'),
@@ -135,6 +136,7 @@ const autoSeed = async () => {
       {
         batch: '2023',
         name: 'Aanya Patel',
+        department: 'ECE',
         salutation: 'Ms.',
         gender: 'Female',
         dob: new Date('1999-11-20'),
@@ -174,6 +176,7 @@ const autoSeed = async () => {
       {
         batch: '2022',
         name: 'Rohan Deshmukh',
+        department: 'CSE',
         salutation: 'Mr.',
         gender: 'Male',
         dob: new Date('1997-03-08'),
@@ -213,6 +216,7 @@ const autoSeed = async () => {
       {
         batch: '2023',
         name: 'Kavya Nair',
+        department: 'IT',
         salutation: 'Ms.',
         gender: 'Female',
         dob: new Date('1999-07-19'),
@@ -244,6 +248,7 @@ const autoSeed = async () => {
       {
         batch: '2024',
         name: 'Siddharth Rao',
+        department: 'MECH',
         salutation: 'Mr.',
         gender: 'Male',
         dob: new Date('2000-01-12'),
@@ -261,6 +266,7 @@ const autoSeed = async () => {
       {
         batch: '2024',
         name: 'Ananya Roy',
+        department: 'EEE',
         salutation: 'Ms.',
         gender: 'Female',
         dob: new Date('2000-09-25'),

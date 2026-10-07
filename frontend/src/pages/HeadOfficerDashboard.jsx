@@ -15,7 +15,6 @@ const HeadOfficerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('escalations'); // 'escalations' | 'inactivity'
   const [actionMessage, setActionMessage] = useState(null);
-  const [sendingEmailId, setSendingEmailId] = useState(null);
   const [selectedInspectId, setSelectedInspectId] = useState(null);
 
   const fetchData = async () => {
@@ -40,20 +39,6 @@ const HeadOfficerDashboard = () => {
   useEffect(() => {
     fetchData();
   }, []);
-
-  const handleSendReminderEmail = async (studentId) => {
-    setSendingEmailId(studentId);
-    setActionMessage(null);
-    try {
-      const response = await api.post('/officer/send-reminder', { studentId });
-      setActionMessage({ type: 'success', text: response.data.message });
-      setSendingEmailId(null);
-      fetchData();
-    } catch (error) {
-      setSendingEmailId(null);
-      setActionMessage({ type: 'error', text: error.response?.data?.message || 'Email dispatch failed' });
-    }
-  };
 
   const handleEscalationUpdate = async (alumniId, newLevel) => {
     setActionMessage(null);
@@ -303,7 +288,7 @@ const HeadOfficerDashboard = () => {
                 <span>Student Coordinator Activity Monitor</span>
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                Monitors Student Coordinators with pending outreach assignments and triggers automatic reminder emails if inactive for 3+ days.
+                Monitors Student Coordinators with pending outreach assignments. Quota management and outreach initiative emails are administered exclusively by Department Staff Coordinators.
               </p>
             </div>
 
@@ -316,7 +301,7 @@ const HeadOfficerDashboard = () => {
                     <th className="p-3">Contact Info</th>
                     <th className="p-3">Pending Records</th>
                     <th className="p-3">Inactivity Status</th>
-                    <th className="p-3 text-right">Head Officer Action</th>
+                    <th className="p-3 text-right">Monitoring Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -351,14 +336,9 @@ const HeadOfficerDashboard = () => {
                           )}
                         </td>
                         <td className="p-3 text-right">
-                          <button
-                            onClick={() => handleSendReminderEmail(student._id)}
-                            disabled={sendingEmailId === student._id}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white transition disabled:opacity-50 shadow-md shadow-amber-600/20"
-                          >
-                            <Mail className="w-3.5 h-3.5" />
-                            <span>{sendingEmailId === student._id ? 'Sending Email...' : 'Send Reminder Email'}</span>
-                          </button>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                            <span>Monitored by Staff</span>
+                          </span>
                         </td>
                       </tr>
                     ))

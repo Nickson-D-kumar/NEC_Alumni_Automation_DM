@@ -3,10 +3,22 @@ import Navbar from '../components/Navbar';
 import { StageBadge, ContactBadge, EscalationBadge } from '../components/StatusBadge';
 import RemarksDrawer from '../components/RemarksDrawer';
 import AlumniInspectModal from '../components/AlumniInspectModal';
+import AlumniDiffReviewModal from '../components/AlumniDiffReviewModal';
 import KpiCard from '../components/KpiCard';
 import api from '../services/api';
-import { Database, Search, MessageSquare, RefreshCw, ShieldCheck, AlertTriangle, Eye, CheckCircle2, Clock, Send, RotateCcw } from 'lucide-react';
+import { Database, Search, MessageSquare, RefreshCw, ShieldCheck, AlertTriangle, Eye, CheckCircle2, Clock, Send, RotateCcw, GitCompare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+const STAGE_OPTIONS = [
+  { value: 'ALL', label: 'All Verification Stages' },
+  { value: 'PENDING_SUBMISSION', label: 'Pending Submission' },
+  { value: 'SUBMITTED_BY_STUDENT', label: 'Submitted by Student' },
+  { value: 'VERIFIED_BY_BACK_OFFICER', label: 'Verified by Back Officer' },
+  { value: 'REVISION_REQUESTED', label: 'Revision Requested' },
+  { value: 'ADMIN_APPROVED', label: 'Admin Approved' },
+  { value: 'VERIFICATION_REJECTED', label: 'Verification Rejected' },
+  { value: 'ESCALATED', label: 'Escalated Issues' }
+];
 
 const BackOfficeDashboard = () => {
   const { user } = useAuth();
@@ -14,9 +26,10 @@ const BackOfficeDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [verificationStageFilter, setVerificationStageFilter] = useState('');
+  const [verificationStageFilter, setVerificationStageFilter] = useState('ALL');
   const [selectedRemarkAlumni, setSelectedRemarkAlumni] = useState(null);
   const [selectedInspectId, setSelectedInspectId] = useState(null);
+  const [selectedDiffAlumniId, setSelectedDiffAlumniId] = useState(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const [totalPages, setTotalPages] = useState(1);
@@ -30,7 +43,7 @@ const BackOfficeDashboard = () => {
         api.get('/alumni', {
           params: {
             search,
-            verificationStage: verificationStageFilter,
+            verificationStage: verificationStageFilter === 'ALL' ? '' : verificationStageFilter,
             page,
             limit
           }
@@ -100,7 +113,7 @@ const BackOfficeDashboard = () => {
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex flex-col transition-colors">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 space-y-6">
+      <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         
         {/* Banner Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#151D2F] p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -173,7 +186,10 @@ const BackOfficeDashboard = () => {
               <input
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
                 placeholder="Search master list by name, phone, email..."
                 className="w-full bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500"
               />
@@ -181,14 +197,17 @@ const BackOfficeDashboard = () => {
 
             <select
               value={verificationStageFilter}
-              onChange={(e) => setVerificationStageFilter(e.target.value)}
+              onChange={(e) => {
+                setVerificationStageFilter(e.target.value);
+                setPage(1);
+              }}
               className="bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-indigo-500 cursor-pointer font-medium"
             >
-              <option value="">All Verification Stages</option>
-              <option value="SUBMITTED_BY_STUDENT">SUBMITTED_BY_STUDENT (Pending Verification)</option>
-              <option value="VERIFIED_BY_BACK_OFFICER">VERIFIED_BY_BACK_OFFICER</option>
-              <option value="PENDING_SUBMISSION">PENDING_SUBMISSION</option>
-              <option value="ADMIN_APPROVED">ADMIN_APPROVED</option>
+              {STAGE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -203,13 +222,13 @@ const BackOfficeDashboard = () => {
             <table className="w-full text-left text-xs text-slate-800 dark:text-slate-200">
               <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 uppercase font-semibold text-[11px] border-b border-slate-200 dark:border-slate-700">
                 <tr>
-                  <th className="py-3.5 px-4">Alumni Profile</th>
-                  <th className="py-3.5 px-4">Batch</th>
-                  <th className="py-3.5 px-4">Assigned Coordinator</th>
-                  <th className="py-3.5 px-4">Contact Status</th>
-                  <th className="py-3.5 px-4">Verification Stage</th>
-                  <th className="py-3.5 px-4">Remarks</th>
-                  <th className="py-3.5 px-4 text-right">Back Officer Verification Actions</th>
+                  <th className="w-[18%] py-3 px-3.5">Alumni Profile</th>
+                  <th className="w-[6%] py-3 px-3.5">Batch</th>
+                  <th className="w-[14%] py-3 px-3.5">Assigned Coordinator</th>
+                  <th className="w-[12%] py-3 px-3.5">Contact Status</th>
+                  <th className="w-[14%] py-3 px-3.5">Verification Stage</th>
+                  <th className="w-[8%] py-3 px-3.5">Remarks</th>
+                  <th className="w-[28%] py-3 px-3.5 text-right">Back Officer Verification Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -222,62 +241,69 @@ const BackOfficeDashboard = () => {
                 ) : (
                   alumniList.map((record) => (
                     <tr key={record._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900 dark:text-white">{record.name}</div>
+                      <td className="py-3 px-3.5">
+                        <div className="font-bold text-slate-900 dark:text-white truncate" title={record.name}>{record.name}</div>
                         <div className="text-slate-500 dark:text-slate-400 font-mono text-[11px] font-normal">{record.mobile}</div>
                       </td>
-                      <td className="py-3.5 px-4 text-indigo-700 dark:text-indigo-400 font-mono font-semibold">{record.batch}</td>
-                      <td className="py-3.5 px-4 text-slate-800 dark:text-slate-200 font-medium">
+                      <td className="py-3 px-3.5 text-indigo-700 dark:text-indigo-400 font-mono font-semibold whitespace-nowrap">{record.batch}</td>
+                      <td className="py-3 px-3.5 text-slate-800 dark:text-slate-200 font-medium truncate">
                         {record.assignedTo ? record.assignedTo.name : <span className="text-slate-400 italic">Unassigned</span>}
                       </td>
-                      <td className="py-3.5 px-4"><ContactBadge status={record.contactStatus} /></td>
-                      <td className="py-3.5 px-4"><StageBadge stage={record.verificationStage} /></td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-mono text-xs font-semibold">
+                      <td className="py-3 px-3.5 whitespace-nowrap"><ContactBadge status={record.contactStatus} /></td>
+                      <td className="py-3 px-3.5 whitespace-nowrap"><StageBadge stage={record.verificationStage} /></td>
+                      <td className="py-3 px-3.5 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-mono text-xs font-semibold whitespace-nowrap">
                           {record.adminRemarks?.length || 0} remarks
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="py-3 px-3.5 text-right whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 justify-end">
                           
-                          {/* 1. Verify & Forward to Admin */}
-                          {record.verificationStage === 'SUBMITTED_BY_STUDENT' && (
-                            <button
-                              onClick={() => handleVerifyBackOfficer(record._id)}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all"
-                              title="Verify record details & forward to Admin for final acceptance"
-                            >
-                              <ShieldCheck className="w-3.5 h-3.5" />
-                              <span>Verify & Forward to Admin</span>
-                            </button>
-                          )}
+                          {record.verificationStage === 'ADMIN_APPROVED' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap shadow-sm">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                              <span>Fully Approved</span>
+                            </span>
+                          ) : (
+                            <>
+                              {/* 1. Review & Verify (Exclusively within Diff Modal) */}
+                              <button
+                                onClick={() => setSelectedDiffAlumniId(record._id)}
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-sm transition-all whitespace-nowrap"
+                                title="Side-by-side data comparison between original master data and student submission before verification or rejection"
+                              >
+                                <GitCompare className="w-3.5 h-3.5" />
+                                <span>Review & Verify</span>
+                              </button>
 
-                          {/* 2. Request Student Correction */}
-                          <button
-                            onClick={() => handleRequestCorrection(record)}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-sm transition-all"
-                            title="Request correction from assigned Student Coordinator"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            <span>Request Correction</span>
-                          </button>
+                              {/* 2. Request Student Correction */}
+                              <button
+                                onClick={() => handleRequestCorrection(record)}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white shadow-sm transition-all whitespace-nowrap"
+                                title="Request correction from assigned Student Coordinator"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                <span>Correction</span>
+                              </button>
 
-                          {/* 3. Escalate to Head Officer */}
-                          {record.escalationLevel !== 'LEVEL_3_HOD' && record.escalationLevel !== 'LEVEL_4_CHAMBER_HEAD' && (
-                            <button
-                              onClick={() => handleEscalateToHead(record._id)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-sm transition-all"
-                              title="Escalate issue (invalid contact / unreachable) to Head Officer Queue"
-                            >
-                              <AlertTriangle className="w-3.5 h-3.5" />
-                              <span>Escalate</span>
-                            </button>
+                              {/* 3. Escalate to Head Officer */}
+                              {record.escalationLevel !== 'LEVEL_3_HOD' && record.escalationLevel !== 'LEVEL_4_CHAMBER_HEAD' && (
+                                <button
+                                  onClick={() => handleEscalateToHead(record._id)}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-sm transition-all whitespace-nowrap"
+                                  title="Escalate issue (invalid contact / unreachable) to Head Officer Queue"
+                                >
+                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                  <span>Escalate</span>
+                                </button>
+                              )}
+                            </>
                           )}
 
                           {/* 4. Inspect Details */}
                           <button
                             onClick={() => setSelectedInspectId(record._id)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700 transition-all"
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700 transition-all whitespace-nowrap"
                             title="Inspect Full Profile Details"
                           >
                             <Eye className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
@@ -345,6 +371,14 @@ const BackOfficeDashboard = () => {
         userRole={user?.role}
         isOpen={!!selectedInspectId}
         onClose={() => setSelectedInspectId(null)}
+        onActionComplete={fetchData}
+      />
+
+      {/* Alumni Diff Review Modal */}
+      <AlumniDiffReviewModal
+        alumniId={selectedDiffAlumniId}
+        isOpen={!!selectedDiffAlumniId}
+        onClose={() => setSelectedDiffAlumniId(null)}
         onActionComplete={fetchData}
       />
     </div>

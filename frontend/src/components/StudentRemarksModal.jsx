@@ -1,22 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { X, MessageSquare, Clock, CheckCircle2 } from 'lucide-react';
+import { X, MessageSquare, Clock, CheckCircle2, XCircle } from 'lucide-react';
 
-export default function StudentRemarksModal({ alumniId, isOpen, onClose }) {
+export default function StudentRemarksModal({ alumniId, alumni, isOpen, onClose }) {
   const [remarks, setRemarks] = useState([]);
   const [alumniName, setAlumniName] = useState('');
+  const [stage, setStage] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const targetId = alumniId || alumni?._id || alumni?.id;
+
   useEffect(() => {
-    if (isOpen && alumniId) fetchStudentRemarks();
-  }, [isOpen, alumniId]);
+    if (isOpen && targetId) {
+      fetchStudentRemarks();
+    } else {
+      setRemarks([]);
+      setAlumniName('');
+      setStage('');
+      setRejectionReason('');
+    }
+  }, [isOpen, targetId]);
 
   const fetchStudentRemarks = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/alumni/${alumniId}/student-remarks`);
-      setRemarks(res.data.data.adminRemarks || []);
-      setAlumniName(res.data.data.name);
+      const res = await api.get(`/alumni/${targetId}/student-remarks`);
+      const remarksList = res.data.data?.adminRemarks || res.data.remarks || [];
+      setRemarks(remarksList);
+      setAlumniName(res.data.data?.name || alumni?.name || 'Alumni');
+      setStage(res.data.data?.verificationStage || alumni?.verificationStage || '');
+      setRejectionReason(res.data.data?.rejectionReason || res.data.data?.backOfficerRemarks || alumni?.rejectionReason || '');
     } catch (err) {
       console.error('Error fetching student remarks:', err);
     } finally {
@@ -33,11 +47,11 @@ export default function StudentRemarksModal({ alumniId, isOpen, onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0B0F19]">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <MessageSquare size={16}/>
+            <div className={`p-1.5 rounded-lg ${stage === 'VERIFICATION_REJECTED' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'}`}>
+              {stage === 'VERIFICATION_REJECTED' ? <XCircle size={16}/> : <MessageSquare size={16}/>}
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Officer Remarks</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Officer Remarks & Audit Log</h3>
               <p className="text-[11px] text-slate-600 dark:text-slate-400">Profile: <span className="text-sky-600 dark:text-sky-400 font-medium">{alumniName}</span></p>
             </div>
           </div>
@@ -46,6 +60,17 @@ export default function StudentRemarksModal({ alumniId, isOpen, onClose }) {
 
         {/* Thread */}
         <div className="p-5 max-h-[50vh] overflow-y-auto space-y-2.5">
+          {stage === 'VERIFICATION_REJECTED' && (
+            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 flex flex-col gap-1 shadow-sm">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-300">
+                <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                <span>Verification Rejected by Back Officer</span>
+              </div>
+              <p className="text-xs text-rose-900 dark:text-rose-200 leading-relaxed font-medium">
+                {rejectionReason || 'Record was rejected during back officer verification review.'}
+              </p>
+            </div>
+          )}
           {loading ? (
             <p className="text-center text-xs text-slate-500 dark:text-slate-400 py-6">Loading notes...</p>
           ) : remarks.length === 0 ? (

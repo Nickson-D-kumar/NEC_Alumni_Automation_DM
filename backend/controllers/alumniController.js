@@ -35,14 +35,17 @@ const getAlumni = async (req, res) => {
 
     if (batch) query.batch = String(batch).trim();
 
-    if (verificationStage) {
-      if (verificationStage === 'VERIFIED_BY_BACK_OFFICER' || verificationStage === 'VERIFIED_BY_HEAD') {
+    if (verificationStage && String(verificationStage).trim() !== '' && String(verificationStage).trim().toUpperCase() !== 'ALL') {
+      const cleanStage = String(verificationStage).trim();
+      if (cleanStage.toUpperCase() === 'ESCALATED') {
+        query.escalationLevel = { $in: ['LEVEL_2_STAFF', 'LEVEL_3_HOD', 'LEVEL_4_CHAMBER_HEAD'] };
+      } else if (cleanStage === 'VERIFIED_BY_BACK_OFFICER' || cleanStage === 'VERIFIED_BY_HEAD') {
         query.$or = [
           { verificationStage: 'VERIFIED_BY_BACK_OFFICER' },
           { verificationStage: 'VERIFIED_BY_HEAD' }
         ];
       } else {
-        query.verificationStage = { $regex: new RegExp(`^${verificationStage.trim()}$`, 'i') };
+        query.verificationStage = { $regex: new RegExp(`^${cleanStage}$`, 'i') };
       }
     }
 
@@ -219,6 +222,54 @@ const updateData = async (req, res) => {
       submitForVerification
     } = req.body;
 
+    // Snapshot original data prior to student modifications if not already captured
+    if (!alumni.originalData) {
+      alumni.originalData = {
+        name: alumni.name || '',
+        gender: alumni.gender || '',
+        mobile: alumni.mobile || '',
+        dob: alumni.dob || null,
+        email: alumni.email || '',
+        label: alumni.label || '',
+        currentLocation: alumni.currentLocation || '',
+        homeTown: alumni.homeTown || '',
+        areaInCityTownLocation: alumni.areaInCityTownLocation || '',
+        chapter: alumni.chapter || '',
+        address: alumni.address ? {
+          correspondenceAddress: alumni.address.correspondenceAddress || '',
+          city: alumni.address.city || '',
+          state: alumni.address.state || '',
+          country: alumni.address.country || '',
+          pincode: alumni.address.pincode || ''
+        } : {},
+        batch: alumni.batch || '',
+        graduationYear: alumni.graduationYear || '',
+        department: alumni.department || '',
+        degree: alumni.degree || '',
+        educationalCourse: alumni.educationalCourse || '',
+        educationalInstitute: alumni.educationalInstitute || '',
+        startYear: alumni.startYear || '',
+        endYear: alumni.endYear || '',
+        professional: alumni.professional ? {
+          company: alumni.professional.company || '',
+          position: alumni.professional.position || '',
+          experienceYears: alumni.professional.experienceYears || 0,
+          skills: [...(alumni.professional.skills || [])],
+          rolesPlayed: alumni.professional.rolesPlayed || '',
+          industriesWorkedIn: alumni.professional.industriesWorkedIn || ''
+        } : {},
+        socials: alumni.socials ? {
+          linkedin: alumni.socials.linkedin || '',
+          facebook: alumni.socials.facebook || ''
+        } : {},
+        contributions: alumni.contributions ? {
+          mentorStudents: Boolean(alumni.contributions.mentorStudents),
+          webinarSpeaker: Boolean(alumni.contributions.webinarSpeaker),
+          scholarships: Boolean(alumni.contributions.scholarships)
+        } : {}
+      };
+    }
+
     // 1. Personal Information
     if (name !== undefined) alumni.name = name;
     if (gender !== undefined) alumni.gender = gender;
@@ -297,6 +348,7 @@ const updateData = async (req, res) => {
 
     if (submitForVerification || contactStatus === 'REACHED_COMPLETE') {
       alumni.verificationStage = 'SUBMITTED_BY_STUDENT';
+      alumni.submittedAt = new Date();
     }
 
     await alumni.save();
@@ -370,7 +422,8 @@ const getStats = async (req, res) => {
       notAttemptedRaw,
       level2EscalationsRaw,
       level3EscalationsRaw,
-      level4EscalationsRaw
+      level4EscalationsRaw,
+      verificationRejectedRaw
     ] = await Promise.all([
       Alumni.countDocuments(),
       Alumni.countDocuments({ verificationStage: { $regex: /^PENDING_SUBMISSION$/i } }),
@@ -395,7 +448,8 @@ const getStats = async (req, res) => {
       }),
       Alumni.countDocuments({ escalationLevel: 'LEVEL_2_STAFF' }),
       Alumni.countDocuments({ escalationLevel: 'LEVEL_3_HOD' }),
-      Alumni.countDocuments({ escalationLevel: 'LEVEL_4_CHAMBER_HEAD' })
+      Alumni.countDocuments({ escalationLevel: 'LEVEL_4_CHAMBER_HEAD' }),
+      Alumni.countDocuments({ verificationStage: { $regex: /^VERIFICATION_REJECTED$/i } })
     ]);
 
     const total = totalRaw || 0;
@@ -422,6 +476,7 @@ const getStats = async (req, res) => {
         verifiedByBackOfficer: verifiedByBackOfficerRaw || 0,
         verifiedByHead: verifiedByBackOfficerRaw || 0,
         adminApproved: adminApprovedRaw || 0,
+        verificationRejected: verificationRejectedRaw || 0,
         reachedPercentage: Number(reachedPercentage),
         backOfficerVerifiedPercentage: Number(backOfficerVerifiedPercentage),
         headVerifiedPercentage: Number(backOfficerVerifiedPercentage),
@@ -521,7 +576,7 @@ const addRemarkPost = async (req, res) => {
 const getStudentRemarks = async (req, res) => {
   try {
     const record = await Alumni.findById(req.params.id)
-      .select('name adminRemarks assignedTo')
+      .select('name adminRemarks assignedTo rejectionReason backOfficerRemarks verificationStage')
       .populate('adminRemarks.sender', 'name role');
 
     if (!record) {
@@ -532,7 +587,17 @@ const getStudentRemarks = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
-    return res.json({ success: true, remarks: record.adminRemarks || [] });
+    return res.json({ 
+      success: true, 
+      remarks: record.adminRemarks || [],
+      data: {
+        name: record.name,
+        verificationStage: record.verificationStage,
+        rejectionReason: record.rejectionReason,
+        backOfficerRemarks: record.backOfficerRemarks,
+        adminRemarks: record.adminRemarks || []
+      }
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Error fetching remarks', error: error.message });
   }

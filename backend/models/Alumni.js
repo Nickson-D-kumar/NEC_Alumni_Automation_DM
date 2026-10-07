@@ -58,6 +58,7 @@ const alumniSchema = new mongoose.Schema({
   chamberId: String,
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
   assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  assignedAt: { type: Date, default: null },
   lastUpdatedByStudent: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   lastContactedAt: Date,
   contactStatus: { 
@@ -74,12 +75,17 @@ const alumniSchema = new mongoose.Schema({
   },
   verificationStage: {
     type: String,
-    enum: ['PENDING_SUBMISSION', 'SUBMITTED_BY_STUDENT', 'VERIFIED_BY_BACK_OFFICER', 'VERIFIED_BY_HEAD', 'ADMIN_APPROVED'],
+    enum: ['PENDING_SUBMISSION', 'SUBMITTED_BY_STUDENT', 'REVISION_REQUESTED', 'VERIFIED_BY_BACK_OFFICER', 'VERIFIED_BY_HEAD', 'ADMIN_APPROVED', 'VERIFICATION_REJECTED'],
     default: 'PENDING_SUBMISSION',
     index: true
   },
+  originalData: { type: mongoose.Schema.Types.Mixed, default: null },
+  submittedAt: Date,
   verifiedByBackOfficer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
   backOfficerVerificationDate: Date,
+  rejectedByBackOfficer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+  backOfficerRejectionDate: Date,
+  rejectionReason: String,
   backOfficerRemarks: String,
   adminRemarks: [{
     sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

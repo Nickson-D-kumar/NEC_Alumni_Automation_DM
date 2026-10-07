@@ -327,6 +327,19 @@ const AlumniVerificationModal = ({ alumniId, isOpen, onClose, onSuccess }) => {
               </div>
             )}
 
+            {/* Rejection Notice Banner */}
+            {originalRecord?.verificationStage === 'VERIFICATION_REJECTED' && (
+              <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 text-xs flex flex-col gap-1 shadow-sm">
+                <div className="flex items-center gap-1.5 font-bold text-rose-800 dark:text-rose-300">
+                  <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                  <span>Verification Rejected by Back Officer</span>
+                </div>
+                <p className="text-rose-900 dark:text-rose-200 font-medium leading-relaxed">
+                  Reason: {originalRecord.rejectionReason || originalRecord.backOfficerRemarks || 'Please verify details again and submit correct information.'}
+                </p>
+              </div>
+            )}
+
             {/* TAB 1: PERSONAL INFORMATION */}
             {activeTab === 'personal' && (
               <div className="space-y-4">

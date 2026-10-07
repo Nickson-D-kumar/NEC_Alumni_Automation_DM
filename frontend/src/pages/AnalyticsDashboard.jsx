@@ -188,7 +188,7 @@ const AnalyticsDashboard = () => {
         </div>
 
         {/* WEEKLY ANALYSIS REPORT SECTION */}
-        <WeeklyAnalysisReport department={department} />
+        <WeeklyAnalysisReport department={department} onDepartmentChange={setDepartment} />
 
         {/* EXTENDED VISUAL PIPELINE BREAKDOWN */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -1,4 +1,5 @@
 const Alumni = require('../models/Alumni');
+const User = require('../models/User');
 
 // @desc    Get Analytics & Data Insights Summary
 // @route   GET /api/analytics/summary
@@ -94,11 +95,18 @@ const getAnalyticsSummary = async (req, res) => {
 };
 
 // @desc    Get Weekly Analysis Report Breakdown for Bar Chart
+// @desc    Get Weekly Analysis Report Breakdown for Bar Chart (Target vs Achieved)
 // @route   GET /api/analytics/weekly-breakdown
-// @access  Private (ADMIN, HEAD_OFFICER, CHAMBER_BACK_OFFICER, BACK_OFFICER)
+// @access  Private (ADMIN, HEAD_OFFICER, CHAMBER_BACK_OFFICER, BACK_OFFICER, STAFF_COORDINATOR, STUDENT_COORDINATOR)
 const getWeeklyBreakdown = async (req, res) => {
   try {
-    const { startDate, endDate, department } = req.query;
+    const { startDate, endDate, department, studentId: queryStudentId } = req.query;
+
+    // If logged-in user is a STUDENT_COORDINATOR, bind to their own ID
+    let studentId = queryStudentId;
+    if (req.user && req.user.role === 'STUDENT_COORDINATOR') {
+      studentId = req.user._id || req.user.id;
+    }
 
     const now = new Date();
     let endObj = endDate ? new Date(endDate) : new Date(now);
@@ -121,21 +129,7 @@ const getWeeklyBreakdown = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Maximum date range is limited to 6 months.' });
     }
 
-    // 2. Build Query Filter
-    const filter = {
-      verificationStage: { $in: ['ADMIN_APPROVED', 'VERIFIED_BY_BACK_OFFICER', 'VERIFIED_BY_HEAD'] },
-      $or: [
-        { backOfficerVerificationDate: { $gte: startObj, $lte: endObj } },
-        { updatedAt: { $gte: startObj, $lte: endObj } },
-        { createdAt: { $gte: startObj, $lte: endObj } }
-      ]
-    };
-
-    if (department && department.trim() !== '' && department.toUpperCase() !== 'ALL') {
-      filter.department = { $regex: new RegExp(`^${department.trim()}$`, 'i') };
-    }
-
-    // 3. Generate Chronological Week Buckets (0-fill logic)
+    // 2. Generate Chronological Week Buckets (0-fill logic)
     const weeks = [];
     let curWeekStart = new Date(startObj);
     let weekIndex = 1;
@@ -156,7 +150,7 @@ const getWeeklyBreakdown = async (req, res) => {
       const endMonth = monthNames[curWeekEnd.getMonth()];
 
       const dateRangeText = `${startDay} ${startMonth} - ${endDay} ${endMonth}`;
-      const weekLabel = `Week ${weekIndex} (${dateRangeText})`;
+      const weekLabel = `Week ${weekIndex}`;
 
       weeks.push({
         weekIndex,
@@ -166,42 +160,120 @@ const getWeeklyBreakdown = async (req, res) => {
         endDate: curWeekEnd.toISOString().split('T')[0],
         startTime: curWeekStart.getTime(),
         endTime: curWeekEnd.getTime(),
-        verifiedCount: 0
+        target: 0,
+        achieved: 0
       });
 
-      // Advance by 7 days
       curWeekStart = new Date(curWeekStart.getTime() + (7 * 24 * 60 * 60 * 1000));
       curWeekStart.setHours(0, 0, 0, 0);
       weekIndex++;
     }
 
-    // 4. Query Matching Verified Records
-    const alumniRecords = await Alumni.find(filter).lean();
+    // 3. Query Target Records (Allocated to student / coordinators)
+    const targetQuery = {
+      assignedTo: { $ne: null }
+    };
 
-    for (const record of alumniRecords) {
-      const recordTime = record.backOfficerVerificationDate
-        ? new Date(record.backOfficerVerificationDate).getTime()
-        : new Date(record.updatedAt).getTime();
+    if (studentId && studentId !== 'ALL') {
+      targetQuery.assignedTo = studentId;
+    }
 
-      const matchingBucket = weeks.find(w => recordTime >= w.startTime && recordTime <= w.endTime);
+    if (department && department.trim() !== '' && department.toUpperCase() !== 'ALL') {
+      targetQuery.department = { $regex: new RegExp(`^${department.trim()}$`, 'i') };
+    }
+
+    const assignedRecords = await Alumni.find(targetQuery)
+      .select('assignedTo assignedAt createdAt updatedAt department')
+      .lean();
+
+    for (const record of assignedRecords) {
+      const assignTime = record.assignedAt
+        ? new Date(record.assignedAt).getTime()
+        : (record.createdAt ? new Date(record.createdAt).getTime() : new Date(record.updatedAt).getTime());
+
+      const matchingBucket = weeks.find(w => assignTime >= w.startTime && assignTime <= w.endTime);
       if (matchingBucket) {
-        matchingBucket.verifiedCount += 1;
+        matchingBucket.target += 1;
       }
     }
 
-    // 5. Clean Response Payload
-    const dataPayload = weeks.map(({ weekLabel, dateRangeText, startDate, endDate, verifiedCount }) => ({
+    // 4. Query Achieved Records (Records that reached final verification / approval)
+    const achievedQuery = {
+      $or: [
+        { verificationStage: 'ADMIN_APPROVED' },
+        { verificationStage: 'VERIFIED_BY_BACK_OFFICER' }
+      ]
+    };
+
+    if (studentId && studentId !== 'ALL') {
+      achievedQuery.assignedTo = studentId;
+    }
+
+    if (department && department.trim() !== '' && department.toUpperCase() !== 'ALL') {
+      achievedQuery.department = { $regex: new RegExp(`^${department.trim()}$`, 'i') };
+    }
+
+    const verifiedRecords = await Alumni.find(achievedQuery)
+      .select('assignedTo lastUpdatedByStudent backOfficerVerificationDate submittedAt updatedAt verificationStage department adminRemarks')
+      .lean();
+
+    for (const record of verifiedRecords) {
+      let verifyTime;
+      if (record.verificationStage === 'ADMIN_APPROVED') {
+        const lastAdminRemark = record.adminRemarks && record.adminRemarks.length > 0
+          ? record.adminRemarks[record.adminRemarks.length - 1].createdAt
+          : null;
+        verifyTime = lastAdminRemark
+          ? new Date(lastAdminRemark).getTime()
+          : (record.updatedAt ? new Date(record.updatedAt).getTime() : new Date(record.backOfficerVerificationDate || record.createdAt).getTime());
+      } else {
+        verifyTime = record.backOfficerVerificationDate
+          ? new Date(record.backOfficerVerificationDate).getTime()
+          : (record.submittedAt ? new Date(record.submittedAt).getTime() : new Date(record.updatedAt).getTime());
+      }
+
+      const matchingBucket = weeks.find(w => verifyTime >= w.startTime && verifyTime <= w.endTime);
+      if (matchingBucket) {
+        matchingBucket.achieved += 1;
+      }
+    }
+
+    // 5. Compute Summary Metrics & Retrieve Departments
+    const totalTarget = weeks.reduce((acc, w) => acc + (w.target || 0), 0);
+    const totalAchieved = weeks.reduce((acc, w) => acc + (w.achieved || 0), 0);
+    const conversionRate = totalTarget > 0 ? Number(((totalAchieved / totalTarget) * 100).toFixed(1)) : 0;
+
+    const dbDepartments = await Alumni.distinct('department');
+    const defaultDepartments = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'IT'];
+    const departmentList = Array.from(new Set([...defaultDepartments, ...(dbDepartments || [])]))
+      .filter(d => d && d.trim() !== '');
+
+    const coordinators = await User.find({ role: 'STUDENT_COORDINATOR', isActive: true })
+      .select('_id name email department')
+      .lean();
+
+    // 6. Clean Response Payload
+    const dataPayload = weeks.map(({ weekLabel, dateRangeText, startDate, endDate, target, achieved }) => ({
       weekLabel,
       dateRangeText,
       startDate,
       endDate,
-      verifiedCount
+      target,
+      achieved
     }));
 
     return res.json({
       success: true,
       count: dataPayload.length,
-      data: dataPayload
+      data: dataPayload,
+      summary: {
+        totalTarget,
+        totalAchieved,
+        conversionRate: `${conversionRate}%`
+      },
+      departments: departmentList,
+      departmentList,
+      coordinators
     });
   } catch (error) {
     console.error('Error fetching weekly breakdown analytics:', error);

@@ -32,7 +32,10 @@ const GuestGuard = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
 
   if (isAuthenticated && user) {
-    return <Navigate to={getRoleDashboard(user.role)} replace />;
+    const target = getRoleDashboard(user.role);
+    if (target && target !== '/login') {
+      return <Navigate to={target} replace />;
+    }
   }
 
   return children;
@@ -44,7 +47,8 @@ const RootRedirect = () => {
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
-  return <Navigate to={getRoleDashboard(user.role)} replace />;
+  const target = getRoleDashboard(user.role);
+  return <Navigate to={target && target !== '/login' ? target : '/login'} replace />;
 };
 
 function AppRoutes() {

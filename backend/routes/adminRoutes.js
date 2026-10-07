@@ -21,6 +21,7 @@ const {
 
 router.post('/upload-master-sheet', protect, authorize('ADMIN'), upload.single('file'), uploadMasterSheet);
 router.post('/upload-excel', protect, authorize('ADMIN'), upload.single('file'), uploadMasterSheet);
+router.post('/alumni/upload', protect, authorize('ADMIN'), upload.single('file'), uploadMasterSheet);
 
 // Admin Alumni Approval Endpoints
 router.get('/pending-approvals', protect, authorize('ADMIN'), getPendingApprovals);

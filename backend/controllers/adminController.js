@@ -5,8 +5,46 @@ const PayoutRequest = require('../models/PayoutRequest');
 const bcrypt = require('bcryptjs');
 const { parseExcelBuffer, parseMasterSheetAlumni } = require('../utils/excelParser');
 
-// @desc    Master Sheet Upload & Alumni Data Ingestion Pipeline
-// @route   POST /api/admin/upload-master-sheet, POST /api/admin/upload-excel
+// Helper to recursively flatten an object for MongoDB $set without overwriting existing data with empty/null/undefined values
+const buildNonDestructivePatch = (data) => {
+  const patch = {};
+
+  const traverse = (obj, prefix = '') => {
+    if (!obj || typeof obj !== 'object') return;
+    for (const key of Object.keys(obj)) {
+      const val = obj[key];
+      const path = prefix ? `${prefix}.${key}` : key;
+
+      if (key === 'rowIndex' || key === '_id') continue;
+      if (val === null || val === undefined) continue;
+
+      if (typeof val === 'string') {
+        const trimmed = val.trim();
+        if (trimmed.length > 0) {
+          patch[path] = trimmed;
+        }
+      } else if (val instanceof Date) {
+        if (!isNaN(val.getTime())) {
+          patch[path] = val;
+        }
+      } else if (Array.isArray(val)) {
+        if (val.length > 0) {
+          patch[path] = val;
+        }
+      } else if (typeof val === 'object') {
+        traverse(val, path);
+      } else if (typeof val === 'number' || typeof val === 'boolean') {
+        patch[path] = val;
+      }
+    }
+  };
+
+  traverse(data);
+  return patch;
+};
+
+// @desc    Master Sheet Upload & Alumni Data Ingestion Pipeline with Deduplication
+// @route   POST /api/admin/upload-master-sheet, POST /api/admin/upload-excel, POST /api/admin/alumni/upload
 // @access  Private (Admin)
 const uploadMasterSheet = async (req, res) => {
   try {
@@ -23,10 +61,21 @@ const uploadMasterSheet = async (req, res) => {
       validationErrors
     } = parseMasterSheetAlumni(req.file.buffer);
 
+    const processingErrors = [...validationErrors];
+    const duplicateRecords = [];
+
     if (!parsedAlumni || parsedAlumni.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'No valid Alumni records were found in the uploaded file.',
+        stats: {
+          totalRows: totalRowsScanned || 0,
+          insertedCount: 0,
+          updatedCount: 0,
+          duplicateCount: 0,
+          failedCount: validationErrors.length
+        },
+        duplicateRecords: [],
         details: {
           sheetsScanned: sheetNamesScanned,
           totalRowsScanned,
@@ -35,55 +84,149 @@ const uploadMasterSheet = async (req, res) => {
       });
     }
 
-    let insertedCount = 0;
-    let updatedCount = 0;
-    let skippedCount = validationErrors.length;
-    const processingErrors = [...validationErrors];
+    // 1. IN-FILE DEDUPLICATION (File Pre-processing Phase)
+    // Priority: email_id first, fallback to normalized mobile_phone_no
+    const activeRecords = [];
+    const emailToActiveMap = new Map();
+    const mobileToActiveMap = new Map();
+    let fileDuplicateCount = 0;
 
     for (const record of parsedAlumni) {
-      const { rowIndex, ...data } = record;
-      try {
-        // Multi-tier unique matching priority: 1) email, 2) regNo + batch, 3) mobile + batch, 4) name + batch
-        let existing = null;
-        if (data.email && data.email.length > 0) {
-          existing = await Alumni.findOne({ email: data.email });
-        }
-        if (!existing && data.regNo) {
-          existing = await Alumni.findOne({ regNo: data.regNo, batch: data.batch });
-        }
-        if (!existing && data.mobile && data.mobile !== '0000000000') {
-          existing = await Alumni.findOne({ mobile: data.mobile, batch: data.batch });
-        }
-        if (!existing && data.name && data.batch) {
-          existing = await Alumni.findOne({ name: data.name, batch: data.batch });
+      const email = record.email ? String(record.email).trim().toLowerCase() : '';
+      const mobile = (record.mobile && record.mobile !== '0000000000' && record.mobile.length === 10) ? String(record.mobile) : '';
+
+      let duplicatePrev = null;
+      let dupKeyType = '';
+
+      if (email && emailToActiveMap.has(email)) {
+        duplicatePrev = emailToActiveMap.get(email);
+        dupKeyType = 'email';
+      } else if (!email && mobile && mobileToActiveMap.has(mobile)) {
+        duplicatePrev = mobileToActiveMap.get(mobile);
+        dupKeyType = 'phone number';
+      }
+
+      if (duplicatePrev) {
+        fileDuplicateCount++;
+        duplicateRecords.push({
+          row: duplicatePrev.rowIndex,
+          name: duplicatePrev.name || 'Unknown',
+          identifier: duplicatePrev.email || duplicatePrev.mobile || 'N/A',
+          type: 'IN_FILE_DUPLICATE',
+          reason: `Duplicate ${dupKeyType} inside uploaded file (earlier row skipped)`
+        });
+
+        const prevIdx = activeRecords.findIndex(r => r.rowIndex === duplicatePrev.rowIndex);
+        if (prevIdx !== -1) {
+          activeRecords.splice(prevIdx, 1);
         }
 
-        if (existing) {
-          await Alumni.findByIdAndUpdate(existing._id, { $set: data });
+        if (duplicatePrev.email) emailToActiveMap.delete(duplicatePrev.email.toLowerCase());
+        if (duplicatePrev.mobile) mobileToActiveMap.delete(duplicatePrev.mobile);
+      }
+
+      activeRecords.push(record);
+      if (email) emailToActiveMap.set(email, record);
+      if (mobile) mobileToActiveMap.set(mobile, record);
+    }
+
+    // 2. DATABASE COMPARISON & BATCH PROCESSING
+    const uniqueEmails = Array.from(new Set(activeRecords.map(r => r.email).filter(Boolean)));
+    const uniqueMobiles = Array.from(new Set(activeRecords.map(r => r.mobile).filter(m => m && m !== '0000000000' && m.length === 10)));
+
+    let existingDbRecords = [];
+    if (uniqueEmails.length > 0 || uniqueMobiles.length > 0) {
+      const orConditions = [];
+      if (uniqueEmails.length > 0) orConditions.push({ email: { $in: uniqueEmails } });
+      if (uniqueMobiles.length > 0) orConditions.push({ mobile: { $in: uniqueMobiles } });
+
+      existingDbRecords = await Alumni.find({ $or: orConditions }).lean();
+    }
+
+    const dbEmailMap = new Map();
+    const dbMobileMap = new Map();
+
+    existingDbRecords.forEach(dbRec => {
+      if (dbRec.email) dbEmailMap.set(String(dbRec.email).trim().toLowerCase(), dbRec);
+      if (dbRec.mobile && dbRec.mobile !== '0000000000') dbMobileMap.set(String(dbRec.mobile), dbRec);
+    });
+
+    let insertedCount = 0;
+    let updatedCount = 0;
+    let dbDuplicateCount = 0;
+    let failedCount = validationErrors.length;
+
+    for (const record of activeRecords) {
+      const { rowIndex, ...data } = record;
+      const email = data.email ? String(data.email).trim().toLowerCase() : '';
+      const mobile = (data.mobile && data.mobile !== '0000000000' && data.mobile.length === 10) ? String(data.mobile) : '';
+
+      let existingDb = null;
+      if (email && dbEmailMap.has(email)) {
+        existingDb = dbEmailMap.get(email);
+      } else if (mobile && dbMobileMap.has(mobile)) {
+        existingDb = dbMobileMap.get(mobile);
+      }
+
+      if (existingDb) {
+        try {
+          const patchData = buildNonDestructivePatch(data);
+          if (Object.keys(patchData).length > 0) {
+            await Alumni.findByIdAndUpdate(existingDb._id, { $set: patchData });
+          }
           updatedCount++;
-        } else {
-          await Alumni.create(data);
-          insertedCount++;
+          dbDuplicateCount++;
+          duplicateRecords.push({
+            row: rowIndex,
+            name: data.name || 'Unknown',
+            identifier: email || mobile || 'N/A',
+            type: 'DATABASE_DUPLICATE',
+            reason: 'Record already exists in system database (data updated)'
+          });
+        } catch (err) {
+          failedCount++;
+          processingErrors.push({ row: rowIndex, email: email || data.name, reason: err.message });
         }
-      } catch (err) {
-        skippedCount++;
-        processingErrors.push({ row: rowIndex, email: data.email || data.name, reason: err.message });
+      } else {
+        try {
+          const newDoc = await Alumni.create(data);
+          insertedCount++;
+          if (email) dbEmailMap.set(email, newDoc.toObject ? newDoc.toObject() : newDoc);
+          if (mobile) dbMobileMap.set(mobile, newDoc.toObject ? newDoc.toObject() : newDoc);
+        } catch (err) {
+          failedCount++;
+          processingErrors.push({ row: rowIndex, email: email || data.name, reason: err.message });
+        }
       }
     }
 
+    duplicateRecords.sort((a, b) => (a.row || 0) - (b.row || 0));
+
+    const totalRows = totalRowsScanned || (parsedAlumni.length + validationErrors.length);
+    const totalDuplicates = fileDuplicateCount + dbDuplicateCount;
+
     return res.status(200).json({
       success: true,
-      message: `Master Sheet Data Ingestion Complete! Inserted ${insertedCount} new alumni, updated ${updatedCount} existing records.`,
+      message: `Master Sheet Data Ingestion Complete! Inserted ${insertedCount} new records, updated ${updatedCount} existing records, handled ${totalDuplicates} duplicates.`,
+      stats: {
+        totalRows,
+        insertedCount,
+        updatedCount,
+        duplicateCount: totalDuplicates,
+        failedCount
+      },
+      duplicateRecords,
       summary: {
         totalSheetsScanned: sheetNamesScanned.length,
         sheetsScanned: sheetNamesScanned,
         targetSheetName,
         isDedicatedSheet,
-        totalRowsScanned,
+        totalRowsScanned: totalRows,
         totalAlumniParsed: parsedAlumni.length,
         insertedCount,
         updatedCount,
-        skippedCount,
+        duplicateCount: totalDuplicates,
+        skippedCount: failedCount,
         errorCount: processingErrors.length,
         errors: processingErrors
       }
