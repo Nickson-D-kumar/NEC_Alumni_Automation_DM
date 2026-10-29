@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { studentRegister, login, getMe } = require('../controllers/authController');
+const { studentRegister, login, getMe, googleAuth } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Support all route variations to prevent any 404 route mismatches
@@ -11,6 +11,7 @@ router.post('/auth/register', studentRegister);
 router.post('/', studentRegister);
 
 router.post('/login', login);
+router.post('/google', googleAuth);
 router.get('/me', protect, getMe);
 
 module.exports = router;

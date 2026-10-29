@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { ThemeToggle } from '../context/ThemeContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { GraduationCap, Lock, Mail, ArrowRight, ShieldCheck, UserCheck, AlertCircle, UserPlus, Eye, EyeOff } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -11,8 +12,28 @@ const Login = () => {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setSubmitting(true);
+    
+    if (!credentialResponse.credential) {
+      setError('Invalid Google Token Received');
+      setSubmitting(false);
+      return;
+    }
+
+    const res = await loginWithGoogle(credentialResponse.credential);
+
+    if (res.success) {
+      navigate(res.targetPath);
+    } else {
+      setError(res.message);
+      setSubmitting(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,6 +90,32 @@ const Login = () => {
             <span>{error}</span>
           </div>
         )}
+
+        {/* Google OAuth Login */}
+        <div className="mb-6 flex justify-center w-full">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              setError('Google Login Failed');
+              setSubmitting(false);
+            }}
+            useOneTap
+            shape="rectangular"
+            theme="outline"
+            size="large"
+            width="100%"
+            text="continue_with"
+          />
+        </div>
+
+        {/* Divider */}
+        <div className="flex items-center gap-4 mb-6">
+          <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+            Or continue with email
+          </div>
+          <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+        </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">

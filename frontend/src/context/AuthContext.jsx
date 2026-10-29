@@ -58,6 +58,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async (googleToken) => {
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/google', { token: googleToken });
+      const { token: jwtToken, user: userData } = response.data;
+
+      localStorage.setItem('token', jwtToken);
+      localStorage.setItem('user', JSON.stringify(userData));
+
+      setToken(jwtToken);
+      setUser(userData);
+      setLoading(false);
+
+      return { success: true, user: userData, targetPath: getRoleDashboard(userData.role) };
+    } catch (error) {
+      setLoading(false);
+      const message = error.response?.data?.message || 'Google authentication failed.';
+      return { success: false, message };
+    }
+  };
+
   const logoutUser = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -72,6 +93,7 @@ export const AuthProvider = ({ children }) => {
         token,
         loading,
         login: loginUser,
+        loginWithGoogle,
         logout: logoutUser,
         isAuthenticated: !!token && !!user
       }}

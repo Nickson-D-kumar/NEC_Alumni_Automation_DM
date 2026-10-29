@@ -155,4 +155,82 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { studentRegister, login, getMe };
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID);
+
+// @desc    Google OAuth Login
+// @route   POST /api/auth/google
+// @access  Public
+const googleAuth = async (req, res) => {
+  try {
+    const { token } = req.body;
+    
+    // Determine audience based on env setup or allow any valid clientId from our project
+    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+    
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: clientId,
+    });
+    
+    const payload = ticket.getPayload();
+    const email = payload.email.toLowerCase().trim();
+
+    // Database user check
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access restricted. Your email is not registered in the institutional system registry. Contact Admin.',
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account is deactivated. Contact Admin.',
+      });
+    }
+
+    // Block unapproved student accounts per spec
+    if (user.role === 'STUDENT_COORDINATOR' && user.registrationStatus !== 'APPROVED') {
+      return res.status(403).json({ 
+        success: false, 
+        message: `Account is ${user.registrationStatus.toLowerCase().replace('_', ' ')}. Please contact your Head Officer or Admin.` 
+      });
+    }
+
+    // Generate system JWT
+    const appToken = jwt.sign(
+      {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department
+      },
+      process.env.JWT_SECRET || 'crm_super_secret_jwt_key_2026',
+      { expiresIn: '7d' }
+    );
+
+    return res.status(200).json({
+      success: true,
+      token: appToken,
+      role: user.role,
+      name: user.name,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        assignedBatch: user.assignedBatch
+      }
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    return res.status(400).json({ success: false, message: 'Google authentication failed', error: error.message });
+  }
+};
+
+module.exports = { studentRegister, login, getMe, googleAuth };

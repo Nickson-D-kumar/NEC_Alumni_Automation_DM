@@ -143,14 +143,18 @@ function AppRoutes() {
   );
 }
 
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
 export default function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
-      </AuthProvider>
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || '111111111111-exampleclientid.apps.googleusercontent.com'}>
+        <AuthProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </AuthProvider>
+      </GoogleOAuthProvider>
     </ThemeProvider>
   );
 }
